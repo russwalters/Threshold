@@ -1,12 +1,8 @@
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is not set");
-}
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  typescript: true,
-});
+export const stripe = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'sk_test_xxx'
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { typescript: true })
+  : null;
 
 export const PRICE_IDS = {
   pro: process.env.STRIPE_PRO_PRICE_ID!,
@@ -19,6 +15,7 @@ export async function createCheckoutSession(
   customerEmail: string,
   customerId?: string
 ) {
+  if (!stripe) throw new Error("Stripe not configured");
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
@@ -41,6 +38,7 @@ export async function createCheckoutSession(
 }
 
 export async function createBillingPortalSession(customerId: string) {
+  if (!stripe) throw new Error("Stripe not configured");
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
@@ -50,6 +48,7 @@ export async function createBillingPortalSession(customerId: string) {
 }
 
 export async function getSubscription(subscriptionId: string) {
+  if (!stripe) throw new Error("Stripe not configured");
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   return subscription;
 }

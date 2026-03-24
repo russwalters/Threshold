@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createBillingPortalSession } from "@/lib/stripe";
+import { createBillingPortalSession, stripe } from "@/lib/stripe";
 
 export async function POST() {
   try {
+    if (!stripe) {
+      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+    }
+
     const supabase = await createClient();
     const {
       data: { user },

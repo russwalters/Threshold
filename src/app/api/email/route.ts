@@ -120,6 +120,13 @@ export async function POST(request: NextRequest) {
         )
     }
 
+    if (!resend) {
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 503 }
+      )
+    }
+
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: body.to,

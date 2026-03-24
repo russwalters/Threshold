@@ -9,6 +9,7 @@ export async function sendWelcomeEmail(
   email: string,
   name: string
 ): Promise<void> {
+  if (!resend) { console.warn('Resend not configured, skipping email'); return }
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -28,6 +29,7 @@ export async function sendMaintenanceReminder(
   propertyName: string,
   items: { title: string; date: string }[]
 ): Promise<void> {
+  if (!resend) { console.warn('Resend not configured, skipping email'); return }
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -49,6 +51,7 @@ export async function sendHandbookSharedEmail(
   handbookUrl: string,
   isPasswordProtected: boolean
 ): Promise<void> {
+  if (!resend) { console.warn('Resend not configured, skipping email'); return }
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to,
