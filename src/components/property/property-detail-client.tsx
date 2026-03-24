@@ -17,8 +17,11 @@ import {
 } from "lucide-react";
 import type {
   Property, Room, Appliance, MaintenanceEvent,
-  EmergencyInfo, HandbookConfig, Json,
+  EmergencyInfo, HandbookConfig, Consumable, Json,
 } from "@/types/database";
+import { BreakerPanelSummary } from "@/components/property/breaker-panel-summary";
+import { BreakerPanel } from "@/components/property/breaker-panel";
+import { ConsumablesTab } from "@/components/property/consumables-tab";
 
 // Re-export Document type with alias to avoid conflict with global Document
 type DocumentRecord = import("@/types/database").Document;
@@ -42,6 +45,7 @@ interface PropertyDetailClientProps {
   maintenanceEvents: MaintenanceEvent[];
   emergencyInfo: EmergencyInfo | null;
   handbookConfig: HandbookConfig | null;
+  consumables?: Consumable[];
 }
 
 // Helper to safely extract emergency info fields which are stored as Json
@@ -74,6 +78,7 @@ export function PropertyDetailClient({
   maintenanceEvents,
   emergencyInfo,
   handbookConfig,
+  consumables,
 }: PropertyDetailClientProps) {
   const [applianceSearch, setApplianceSearch] = useState("");
   const [applianceCategory, setApplianceCategory] = useState("all");
@@ -145,6 +150,7 @@ export function PropertyDetailClient({
           <TabsTrigger value="appliances" className="data-[state=active]:bg-ember data-[state=active]:text-white">Appliances</TabsTrigger>
           <TabsTrigger value="documents" className="data-[state=active]:bg-ember data-[state=active]:text-white">Documents</TabsTrigger>
           <TabsTrigger value="maintenance" className="data-[state=active]:bg-ember data-[state=active]:text-white">Maintenance</TabsTrigger>
+          <TabsTrigger value="consumables" className="data-[state=active]:bg-ember data-[state=active]:text-white">Supplies</TabsTrigger>
           <TabsTrigger value="emergency" className="data-[state=active]:bg-ember data-[state=active]:text-white">Emergency</TabsTrigger>
           <TabsTrigger value="handbook" className="data-[state=active]:bg-ember data-[state=active]:text-white">Handbook</TabsTrigger>
         </TabsList>
@@ -432,6 +438,11 @@ export function PropertyDetailClient({
           )}
         </TabsContent>
 
+        {/* Consumables/Supplies Tab */}
+        <TabsContent value="consumables" className="space-y-6">
+          <ConsumablesTab propertyId={property.id} consumables={consumables ?? []} appliances={appliances} />
+        </TabsContent>
+
         {/* Emergency Tab */}
         <TabsContent value="emergency" className="space-y-6">
           <h2 className="font-heading text-xl font-semibold text-hearth">Emergency Information</h2>
@@ -459,6 +470,9 @@ export function PropertyDetailClient({
                   </Card>
                 ))}
               </div>
+
+              {/* Breaker Panel */}
+              <BreakerPanelSection propertyId={property.id} emergencyInfo={emergencyInfo} rooms={rooms} />
 
               {/* Emergency contacts */}
               {getEmergencyContacts(emergencyInfo.emergency_contacts).length > 0 && (
@@ -572,6 +586,49 @@ export function PropertyDetailClient({
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// --- Breaker Panel Section ---
+function BreakerPanelSection({ propertyId, emergencyInfo, rooms }: { propertyId: string; emergencyInfo: EmergencyInfo; rooms: Room[] }) {
+  const [showFullPanel, setShowFullPanel] = useState(false);
+  const breakers = Array.isArray(emergencyInfo.breaker_panel)
+    ? (emergencyInfo.breaker_panel as unknown as Array<{ position: number; label: string; amperage: number; type: "single" | "double"; rooms: string[]; isMain: boolean; notes?: string }>)
+    : [];
+
+  const handleUpdate = async (updated: typeof breakers) => {
+    const { updateBreakerPanel } = await import("@/app/actions/breaker-panel");
+    await updateBreakerPanel(propertyId, updated);
+  };
+
+  if (showFullPanel) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-heading text-lg font-semibold text-hearth">Breaker Panel</h3>
+          <Button variant="outline" size="sm" onClick={() => setShowFullPanel(false)}>Close Panel</Button>
+        </div>
+        <BreakerPanel
+          propertyId={propertyId}
+          breakers={breakers}
+          rooms={rooms.map((r) => ({ id: r.id, name: r.name }))}
+          onUpdate={handleUpdate}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-heading text-lg font-semibold text-hearth">Breaker Panel</h3>
+      <BreakerPanelSummary breakers={breakers} totalSlots={40} />
+      <Button
+        className="bg-ember hover:bg-ember-dark text-white"
+        onClick={() => setShowFullPanel(true)}
+      >
+        <Zap className="h-4 w-4 mr-2" /> Open Full Breaker Panel
+      </Button>
     </div>
   );
 }

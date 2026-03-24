@@ -6,6 +6,7 @@ import { getDocuments } from "@/app/actions/documents";
 import { getMaintenanceEvents } from "@/app/actions/maintenance";
 import { getEmergencyInfo } from "@/app/actions/emergency";
 import { getHandbookConfig } from "@/app/actions/handbook";
+import { getConsumables } from "@/app/actions/consumables";
 import { PropertyDetailClient } from "@/components/property/property-detail-client";
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     maintenanceResult,
     emergencyResult,
     handbookResult,
+    consumablesResult,
   ] = await Promise.all([
     getProperty(id),
     getRooms(id),
@@ -27,6 +29,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     getMaintenanceEvents(id),
     getEmergencyInfo(id),
     getHandbookConfig(id),
+    getConsumables(id),
   ]);
 
   if (!propertyResult.data) {
@@ -42,6 +45,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
       maintenanceEvents={maintenanceResult.data ?? []}
       emergencyInfo={emergencyResult.data}
       handbookConfig={handbookResult.data}
+      consumables={consumablesResult.data ?? []}
     />
   );
 }
