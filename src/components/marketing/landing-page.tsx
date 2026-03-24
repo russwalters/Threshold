@@ -26,6 +26,7 @@ import {
   Building2,
   Smartphone,
   QrCode,
+  Sparkles,
 } from "lucide-react";
 
 function Navbar() {
@@ -40,10 +41,10 @@ function Navbar() {
           <a href="#testimonials" className="text-sm font-medium text-stone hover:text-hearth transition-colors">Testimonials</a>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dashboard">
+          <Link href="/login">
             <Button variant="ghost" className="text-sm text-stone hover:text-hearth">Log in</Button>
           </Link>
-          <Link href="/dashboard">
+          <Link href="/signup">
             <Button className="bg-ember hover:bg-ember-dark text-white text-sm">Get Started Free</Button>
           </Link>
         </div>
@@ -85,7 +86,7 @@ function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/dashboard">
+            <Link href="/signup">
               <Button size="lg" className="bg-ember hover:bg-ember-dark text-white text-lg px-8 py-6 rounded-xl shadow-lg shadow-ember/25 hover:shadow-xl hover:shadow-ember/30 transition-all">
                 Start Documenting — It&apos;s Free
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -337,60 +338,65 @@ function HowItWorks() {
   );
 }
 
-function Pricing() {
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      description: "Perfect for a single home",
-      features: [
-        "1 property",
-        "Unlimited rooms & appliances",
-        "Document storage (100 MB)",
-        "Basic handbook",
-        "Emergency info",
-      ],
-      cta: "Get Started Free",
-      popular: false,
-    },
-    {
-      name: "Pro",
-      price: "$9",
-      period: "/month",
-      description: "For landlords and serious homeowners",
-      features: [
-        "Up to 5 properties",
-        "Unlimited everything",
-        "Document storage (10 GB)",
-        "Custom branded handbooks",
-        "Maintenance scheduling",
-        "QR codes for rooms",
-        "Priority support",
-      ],
-      cta: "Start Pro Trial",
-      popular: true,
-    },
-    {
-      name: "Portfolio",
-      price: "$29",
-      period: "/month",
-      description: "For property managers at scale",
-      features: [
-        "Unlimited properties",
-        "Unlimited everything",
-        "Document storage (100 GB)",
-        "White-label handbooks",
-        "Team access & permissions",
-        "API access",
-        "Dedicated support",
-        "Analytics & reports",
-      ],
-      cta: "Contact Sales",
-      popular: false,
-    },
-  ];
+const pricingPlans = [
+  {
+    tier: "free",
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Perfect for a single home",
+    icon: Home,
+    features: [
+      "1 property",
+      "10 appliances",
+      "Basic handbook",
+      "Emergency info",
+      "Community support",
+    ],
+    cta: "Get Started Free",
+    popular: false,
+  },
+  {
+    tier: "pro",
+    name: "Pro",
+    price: "$9",
+    period: "/month",
+    description: "For landlords and serious homeowners",
+    icon: Sparkles,
+    popular: true,
+    features: [
+      "Up to 3 properties",
+      "Unlimited appliances",
+      "Custom branded handbooks",
+      "Document vault",
+      "Email support",
+      "Maintenance scheduling",
+      "QR codes for rooms",
+    ],
+    cta: "Start Pro Trial",
+  },
+  {
+    tier: "portfolio",
+    name: "Portfolio",
+    price: "$29",
+    period: "/month",
+    description: "For property managers at scale",
+    icon: Building2,
+    features: [
+      "Unlimited properties",
+      "Unlimited appliances",
+      "Custom branded handbooks",
+      "Document vault",
+      "Priority support",
+      "Team access (coming soon)",
+      "Analytics & reports (coming soon)",
+    ],
+    cta: "Contact Sales",
+    popular: false,
+  },
+];
 
+function Pricing() {
   return (
     <section id="pricing" className="py-20 lg:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -401,28 +407,56 @@ function Pricing() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, i) => (
-            <Card key={i} className={`relative bg-white border-clay/20 ${plan.popular ? "border-ember shadow-xl shadow-ember/10 scale-105" : "hover:shadow-lg"} transition-all`}>
+          {pricingPlans.map((plan) => (
+            <Card
+              key={plan.tier}
+              className={`relative bg-white border-clay/20 transition-all duration-300 ${
+                plan.popular
+                  ? "border-ember shadow-xl shadow-ember/10 scale-105"
+                  : "hover:shadow-lg hover:shadow-hearth/5"
+              }`}
+            >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-ember text-white border-0 shadow-lg shadow-ember/25">Most Popular</Badge>
                 </div>
               )}
               <CardContent className="p-8">
-                <h3 className="font-heading text-xl font-semibold text-hearth mb-1">{plan.name}</h3>
+                <div className="flex items-center gap-3 mb-1">
+                  <div
+                    className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                      plan.popular
+                        ? "bg-ember/10"
+                        : plan.tier === "portfolio"
+                        ? "bg-brass/10"
+                        : "bg-sage/10"
+                    }`}
+                  >
+                    <plan.icon
+                      className={`h-5 w-5 ${
+                        plan.popular
+                          ? "text-ember"
+                          : plan.tier === "portfolio"
+                          ? "text-brass"
+                          : "text-sage"
+                      }`}
+                    />
+                  </div>
+                  <h3 className="font-heading text-xl font-semibold text-hearth">{plan.name}</h3>
+                </div>
                 <p className="text-sm text-stone mb-4">{plan.description}</p>
                 <div className="mb-6">
                   <span className="text-4xl font-heading font-bold text-hearth">{plan.price}</span>
                   <span className="text-stone text-sm">{plan.period}</span>
                 </div>
-                <Link href="/dashboard">
-                  <Button className={`w-full ${plan.popular ? "bg-ember hover:bg-ember-dark text-white" : "bg-hearth hover:bg-hearth/90 text-white"}`}>
+                <Link href="/signup">
+                  <Button className={`w-full ${plan.popular ? "bg-ember hover:bg-ember-dark text-white shadow-lg shadow-ember/25" : "bg-hearth hover:bg-hearth/90 text-white"}`}>
                     {plan.cta}
                   </Button>
                 </Link>
                 <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm text-stone">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-stone">
                       <CheckCircle2 className="h-4 w-4 text-sage shrink-0" />
                       {feature}
                     </li>
@@ -485,7 +519,7 @@ function FinalCTA() {
           Join thousands of homeowners and landlords who finally know their homes inside and out.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/dashboard">
+          <Link href="/signup">
             <Button size="lg" className="bg-ember hover:bg-ember-dark text-white text-lg px-10 py-6 rounded-xl shadow-lg shadow-ember/25">
               Get Started — It&apos;s Free
               <ArrowRight className="ml-2 h-5 w-5" />

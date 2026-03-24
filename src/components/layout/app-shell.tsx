@@ -6,7 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
-function MobileSidebar() {
+interface SidebarProperty {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+}
+
+interface AppShellProps {
+  children: React.ReactNode;
+  properties?: SidebarProperty[];
+  userFullName?: string | null;
+  subscriptionTier?: string | null;
+}
+
+function MobileSidebar({ properties, userFullName, subscriptionTier }: Omit<AppShellProps, "children">) {
   return (
     <Sheet>
       <SheetTrigger className="lg:hidden inline-flex items-center justify-center rounded-md p-2 text-stone hover:bg-accent hover:text-hearth transition-colors">
@@ -14,18 +28,18 @@ function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
         <SheetTitle className="sr-only">Navigation</SheetTitle>
-        <Sidebar />
+        <Sidebar properties={properties} userFullName={userFullName} subscriptionTier={subscriptionTier} />
       </SheetContent>
     </Sheet>
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, properties = [], userFullName, subscriptionTier }: AppShellProps) {
   return (
     <div className="min-h-screen bg-linen">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar properties={properties} userFullName={userFullName} subscriptionTier={subscriptionTier} />
       </div>
 
       {/* Main content */}
@@ -33,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-16 bg-linen/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-4">
-            <MobileSidebar />
+            <MobileSidebar properties={properties} userFullName={userFullName} subscriptionTier={subscriptionTier} />
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone" />
               <Input

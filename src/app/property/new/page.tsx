@@ -10,10 +10,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/shared/image-upload";
+import { createProperty } from "@/app/actions/properties";
+import { createRoom } from "@/app/actions/rooms";
+import { upsertHandbookConfig } from "@/app/actions/handbook";
+import { upsertEmergencyInfo } from "@/app/actions/emergency";
+import { getProperties } from "@/app/actions/properties";
+import { getSubscriptionStatus } from "@/app/actions/profile";
+import { canAddProperty } from "@/lib/plans";
+import type { PlanTier } from "@/lib/plans";
 import {
   ArrowLeft, ArrowRight, Check, Home, Building2,
-  MapPin, Bed, Bath, Ruler, Calendar, Plus, X,
-  Wifi, Car, Trash2, AlertTriangle, Phone,
+  Plus, X, Wifi, Car, Trash2, AlertTriangle, Phone,
+  Loader2, Crown,
 } from "lucide-react";
 
 const propertyTypes = [
@@ -45,6 +54,11 @@ const steps = [
 export default function NewPropertyPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [atPlanLimit, setAtPlanLimit] = useState(false);
+  const [checkedLimit, setCheckedLimit] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -57,6 +71,7 @@ export default function NewPropertyPage() {
     baths: "2",
     sqft: "",
     yearBuilt: "",
+    photoUrl: "",
     rooms: ["Living Room", "Kitchen", "Primary Bedroom", "Bathroom"],
     wifiName: "",
     wifiPassword: "",
@@ -85,12 +100,248 @@ export default function NewPropertyPage() {
     setFormData((prev) => ({ ...prev, rooms: prev.rooms.filter((r) => r !== room) }));
   };
 
-  const handleSubmit = () => {
-    toast.success("Property created!", {
-      description: `${formData.name || formData.address || "New property"} has been added to your properties.`,
-    });
-    router.push("/dashboard");
+  // Check plan limits on first render
+  useState(() => {
+    (async () => {
+      try {
+        const [subResult, propResult] = await Promise.all([
+          getSubscriptionStatus(),
+          getProperties(),
+        ]);
+
+        if (subResult.data) {
+          const tier = subResult.data.profile.subscription_tier as PlanTier;
+          const currentCount = propResult.data?.length ?? 0;
+          if (!canAddProperty(tier, currentCount)) {
+            setAtPlanLimit(true);
+          }
+        }
+        setCheckedLimit(true);
+      } catch {
+        setCheckedLimit(true);
+      }
+    })();
+  });
+
+  // Step 1: Create the property
+  const handleStep1Next = async () => {
+    if (!formData.address.trim()) {
+      toast.error("Please enter a street address.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Re-check plan limit right before creating
+      const [subResult, propResult] = await Promise.all([
+        getSubscriptionStatus(),
+        getProperties(),
+      ]);
+
+      if (subResult.data) {
+        const tier = subResult.data.profile.subscription_tier as PlanTier;
+        const currentCount = propResult.data?.length ?? 0;
+        if (!canAddProperty(tier, currentCount)) {
+          setAtPlanLimit(true);
+          setIsSaving(false);
+          return;
+        }
+        setUserId(subResult.data.profile.id);
+      }
+
+      const fd = new FormData();
+      fd.set("name", formData.name || formData.address);
+      fd.set("address_line1", formData.address);
+      fd.set("city", formData.city);
+      fd.set("state", formData.state);
+      fd.set("zip", formData.zip);
+      fd.set("property_type", formData.type);
+      fd.set("occupancy_status", formData.occupancy);
+      fd.set("beds", formData.beds);
+      fd.set("baths", formData.baths);
+      if (formData.sqft) fd.set("sqft", formData.sqft);
+      if (formData.yearBuilt) fd.set("year_built", formData.yearBuilt);
+      if (formData.photoUrl) fd.set("photo_url", formData.photoUrl);
+
+      const result = await createProperty(fd);
+
+      if (result.error) {
+        toast.error("Failed to create property", { description: result.error });
+        return;
+      }
+
+      setPropertyId(result.data!.id);
+      toast.success("Property created!", { description: "Now let's add rooms." });
+      setCurrentStep(2);
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // Step 2: Create rooms
+  const handleStep2Next = async () => {
+    if (!propertyId) return;
+
+    setIsSaving(true);
+    try {
+      // Create each room in parallel
+      const roomPromises = formData.rooms.map((roomName) => {
+        const fd = new FormData();
+        fd.set("name", roomName);
+        return createRoom(propertyId, fd);
+      });
+
+      const results = await Promise.all(roomPromises);
+      const failed = results.filter((r) => r.error);
+
+      if (failed.length > 0) {
+        toast.error(`${failed.length} room(s) failed to save`, {
+          description: failed[0].error ?? undefined,
+        });
+      } else {
+        toast.success(`${formData.rooms.length} rooms added!`);
+      }
+
+      setCurrentStep(3);
+    } catch (err) {
+      toast.error("Failed to save rooms. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Step 3: Save handbook config (wifi, parking, trash)
+  const handleStep3Next = async () => {
+    if (!propertyId) return;
+
+    setIsSaving(true);
+    try {
+      const fd = new FormData();
+      if (formData.wifiName || formData.wifiPassword) {
+        fd.set("wifi", JSON.stringify({
+          network_name: formData.wifiName,
+          password: formData.wifiPassword,
+        }));
+      }
+      if (formData.parkingInfo) fd.set("parking", formData.parkingInfo);
+      if (formData.trashSchedule) fd.set("trash", formData.trashSchedule);
+
+      const result = await upsertHandbookConfig(propertyId, fd);
+
+      if (result.error) {
+        toast.error("Failed to save details", { description: result.error });
+      } else {
+        toast.success("Key details saved!");
+      }
+
+      setCurrentStep(4);
+    } catch (err) {
+      toast.error("Failed to save details. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Step 4: Save emergency info and finish
+  const handleFinish = async () => {
+    if (!propertyId) return;
+
+    setIsSaving(true);
+    try {
+      const fd = new FormData();
+      if (formData.waterShutoff) {
+        fd.set("water_shutoff", JSON.stringify({
+          location: formData.waterShutoff,
+        }));
+      }
+      if (formData.electricPanel) {
+        fd.set("electric_shutoff", JSON.stringify({
+          location: formData.electricPanel,
+        }));
+      }
+      if (formData.gasShutoff) {
+        fd.set("gas_shutoff", JSON.stringify({
+          location: formData.gasShutoff,
+        }));
+      }
+      if (formData.emergencyContactName || formData.emergencyContactPhone) {
+        fd.set("emergency_contacts", JSON.stringify([{
+          name: formData.emergencyContactName,
+          phone: formData.emergencyContactPhone,
+        }]));
+      }
+
+      const result = await upsertEmergencyInfo(propertyId, fd);
+
+      if (result.error) {
+        toast.error("Failed to save emergency info", { description: result.error });
+      }
+
+      toast.success("Property setup complete!", {
+        description: `${formData.name || formData.address} has been added to your properties.`,
+      });
+
+      router.push(`/property/${propertyId}`);
+    } catch (err) {
+      toast.error("Failed to save emergency info. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        handleStep1Next();
+        break;
+      case 2:
+        handleStep2Next();
+        break;
+      case 3:
+        handleStep3Next();
+        break;
+      case 4:
+        handleFinish();
+        break;
+    }
+  };
+
+  // Plan limit gate
+  if (atPlanLimit) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Link href="/dashboard" className="inline-flex items-center text-sm text-stone hover:text-hearth transition-colors mb-6">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Dashboard
+        </Link>
+
+        <Card className="bg-white border-clay/20 shadow-lg">
+          <CardContent className="p-10 text-center">
+            <div className="h-16 w-16 rounded-2xl bg-ember/10 flex items-center justify-center mx-auto mb-6">
+              <Crown className="h-8 w-8 text-ember" />
+            </div>
+            <h2 className="font-heading text-2xl font-semibold text-hearth mb-3">
+              You&apos;ve reached your property limit
+            </h2>
+            <p className="text-stone mb-8 max-w-md mx-auto">
+              Upgrade your plan to add more properties. The Pro plan supports up to 3 properties, and Portfolio gives you unlimited.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="outline">Back to Dashboard</Button>
+              </Link>
+              <Link href="/settings">
+                <Button className="bg-ember hover:bg-ember-dark text-white">
+                  <Crown className="h-4 w-4 mr-1.5" /> Upgrade Plan
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -132,6 +383,20 @@ export default function NewPropertyPage() {
           {currentStep === 1 && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="font-heading text-xl font-semibold text-hearth">Property Details</h2>
+
+              {/* Property Photo */}
+              <div>
+                <Label>Property Photo</Label>
+                <div className="mt-1.5">
+                  <ImageUpload
+                    userId={userId ?? "pending"}
+                    propertyId="new"
+                    currentImageUrl={formData.photoUrl || undefined}
+                    onUpload={({ url }) => updateField("photoUrl", url)}
+                    onRemove={() => updateField("photoUrl", "")}
+                  />
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -358,7 +623,7 @@ export default function NewPropertyPage() {
             <Button
               variant="outline"
               onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || isSaving}
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
@@ -366,16 +631,26 @@ export default function NewPropertyPage() {
             {currentStep < 4 ? (
               <Button
                 className="bg-ember hover:bg-ember-dark text-white"
-                onClick={() => setCurrentStep((s) => Math.min(4, s + 1))}
+                onClick={handleNextStep}
+                disabled={isSaving}
               >
-                Next Step <ArrowRight className="h-4 w-4 ml-1" />
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : null}
+                {isSaving ? "Saving..." : "Next Step"} {!isSaving && <ArrowRight className="h-4 w-4 ml-1" />}
               </Button>
             ) : (
               <Button
                 className="bg-ember hover:bg-ember-dark text-white"
-                onClick={handleSubmit}
+                onClick={handleNextStep}
+                disabled={isSaving}
               >
-                <Check className="h-4 w-4 mr-1" /> Create Property
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 mr-1" />
+                )}
+                {isSaving ? "Creating..." : "Create Property"}
               </Button>
             )}
           </div>

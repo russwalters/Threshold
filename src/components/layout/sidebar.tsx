@@ -3,16 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   Building2,
   LayoutDashboard,
-  FileText,
-  Wrench,
-  AlertTriangle,
-  BookOpen,
   Plus,
-  Settings,
-  LogOut,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -20,17 +13,40 @@ import { Logo } from "./logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { properties } from "@/data/mock-data";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+interface SidebarProperty {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+}
+
+interface SidebarProps {
+  properties?: SidebarProperty[];
+  userFullName?: string | null;
+  subscriptionTier?: string | null;
+}
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
-export function Sidebar() {
+export function Sidebar({ properties = [], userFullName, subscriptionTier }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  const initials = userFullName
+    ? userFullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+
+  const tierLabel =
+    subscriptionTier === "portfolio"
+      ? "Portfolio Plan"
+      : subscriptionTier === "pro"
+      ? "Pro Plan"
+      : "Free Plan";
 
   return (
     <aside
@@ -120,12 +136,12 @@ export function Sidebar() {
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback className="bg-ember text-white text-xs font-semibold">JD</AvatarFallback>
+            <AvatarFallback className="bg-ember text-white text-xs font-semibold">{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-hearth truncate">Jordan Davis</div>
-              <div className="text-xs text-stone truncate">Pro Plan</div>
+              <div className="text-sm font-medium text-hearth truncate">{userFullName || "User"}</div>
+              <div className="text-xs text-stone truncate">{tierLabel}</div>
             </div>
           )}
         </div>
