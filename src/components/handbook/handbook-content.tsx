@@ -68,6 +68,16 @@ interface FireExtinguisher {
   type?: string;
 }
 
+interface Breaker {
+  position: number;
+  label: string;
+  amperage: number;
+  type: "single" | "double";
+  rooms: string[];
+  isMain: boolean;
+  notes?: string;
+}
+
 // ---------- icon maps ----------
 
 const emergencyIcons: Record<string, React.ElementType> = {
@@ -142,6 +152,7 @@ export interface HandbookContentProps {
     fire_extinguishers: Json | null;
     emergency_contacts: Json;
     emergency_procedures: Json;
+    breaker_panel?: Json;
   } | null;
   handbookConfig: {
     welcome_message: string | null;
@@ -1229,6 +1240,58 @@ export function HandbookContent({
                   </div>
                 </div>
               )}
+
+              {/* Breaker Panel */}
+              {(() => {
+                const breakers = emergencyInfo?.breaker_panel
+                  ? (Array.isArray(emergencyInfo.breaker_panel)
+                    ? emergencyInfo.breaker_panel as unknown as Breaker[]
+                    : [])
+                  : [];
+                if (breakers.length === 0) return null;
+                const mainBreaker = breakers.find(b => b.isMain);
+                const regularBreakers = breakers.filter(b => !b.isMain).sort((a, b) => a.position - b.position);
+                return (
+                  <div>
+                    <h3 className="font-heading text-base font-semibold text-hearth mb-3">Breaker Panel</h3>
+                    <Card className="bg-gradient-to-b from-gray-700 to-gray-800 border-gray-600 overflow-hidden">
+                      <CardContent className="p-4">
+                        {mainBreaker && (
+                          <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-gray-900/50 rounded-lg border border-red-500/30">
+                            <Zap className="h-4 w-4 text-red-400" />
+                            <span className="text-white text-sm font-semibold">MAIN — {mainBreaker.amperage}A</span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                          {Array.from({ length: 20 }, (_, i) => {
+                            const leftPos = i * 2 + 1;
+                            const rightPos = i * 2 + 2;
+                            const left = regularBreakers.find(b => b.position === leftPos);
+                            const right = regularBreakers.find(b => b.position === rightPos);
+                            if (!left && !right) return null;
+                            return (
+                              <div key={i} className="contents">
+                                <div className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${left?.label ? "bg-gray-600/50" : "bg-gray-800/30"}`}>
+                                  <span className="text-gray-400 w-4 text-right font-mono">{leftPos}</span>
+                                  <div className={`w-2 h-2 rounded-full ${left?.label ? "bg-emerald-400" : "bg-gray-600"}`} />
+                                  <span className="text-gray-200 truncate">{left?.label || "—"}</span>
+                                  {left?.amperage && <span className="text-gray-500 ml-auto">{left.amperage}A</span>}
+                                </div>
+                                <div className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs ${right?.label ? "bg-gray-600/50" : "bg-gray-800/30"}`}>
+                                  <span className="text-gray-400 w-4 text-right font-mono">{rightPos}</span>
+                                  <div className={`w-2 h-2 rounded-full ${right?.label ? "bg-emerald-400" : "bg-gray-600"}`} />
+                                  <span className="text-gray-200 truncate">{right?.label || "—"}</span>
+                                  {right?.amperage && <span className="text-gray-500 ml-auto">{right.amperage}A</span>}
+                                </div>
+                              </div>
+                            );
+                          }).filter(Boolean)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })()}
 
               {/* Emergency Procedures */}
               {emergencyProcedures.length > 0 && (
