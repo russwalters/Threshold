@@ -92,7 +92,7 @@ function Hero() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/handbook/frisco-2576">
+            <Link href="/handbook/demo">
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-xl border-clay/40 hover:bg-clay/10">
                 See a Sample Handbook
                 <ChevronRight className="ml-1 h-5 w-5" />

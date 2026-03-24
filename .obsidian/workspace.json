@@ -185,6 +185,9 @@
   },
   "active": "5e801257f957fb89",
   "lastOpenFiles": [
+    "tsconfig.tsbuildinfo",
+    "src/app/handbook/demo/page.tsx",
+    "src/app/handbook/demo",
     "src/components/property/appliance-status-summary.tsx",
     "src/components/property/appliance-quick-log.tsx",
     "src/components/property/appliances-grid.tsx",
@@ -192,9 +195,6 @@
     "src/components/onboarding/quick-add-menu.tsx",
     "src/components/property/appliance-wizard.tsx",
     "src/components/onboarding/next-steps-banner.tsx",
-    "src/app/actions/photos.ts",
-    "src/components/property/breaker-panel-summary.tsx",
-    "src/components/onboarding/micro-mission.tsx",
-    "src/components/property/appliance-photos-section.tsx"
+    "src/app/actions/photos.ts"
   ]
 }
