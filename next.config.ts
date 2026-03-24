@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Run on port 3333 via package.json scripts
 };
 
 export default nextConfig;
