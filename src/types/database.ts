@@ -123,6 +123,7 @@ export interface Database {
           light_bulbs: Json;
           notes: string | null;
           sort_order: number;
+          photo_urls: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -138,6 +139,7 @@ export interface Database {
           light_bulbs?: Json;
           notes?: string | null;
           sort_order?: number;
+          photo_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -153,6 +155,7 @@ export interface Database {
           light_bulbs?: Json;
           notes?: string | null;
           sort_order?: number;
+          photo_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -182,6 +185,7 @@ export interface Database {
           status: "good" | "needs_attention" | "replace_soon";
           location: string | null;
           operating_tips: string[] | null;
+          photo_urls: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -200,6 +204,7 @@ export interface Database {
           status?: "good" | "needs_attention" | "replace_soon";
           location?: string | null;
           operating_tips?: string[] | null;
+          photo_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -218,6 +223,7 @@ export interface Database {
           status?: "good" | "needs_attention" | "replace_soon";
           location?: string | null;
           operating_tips?: string[] | null;
+          photo_urls?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -383,6 +389,7 @@ export interface Database {
           fire_extinguishers: Json | null;
           emergency_contacts: Json;
           emergency_procedures: Json;
+          breaker_panel: Json;
         };
         Insert: {
           id?: string;
@@ -393,6 +400,7 @@ export interface Database {
           fire_extinguishers?: Json | null;
           emergency_contacts?: Json;
           emergency_procedures?: Json;
+          breaker_panel?: Json;
         };
         Update: {
           id?: string;
@@ -403,6 +411,7 @@ export interface Database {
           fire_extinguishers?: Json | null;
           emergency_contacts?: Json;
           emergency_procedures?: Json;
+          breaker_panel?: Json;
         };
         Relationships: [
           {
@@ -513,6 +522,81 @@ export interface Database {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      consumables: {
+        Row: {
+          id: string;
+          property_id: string;
+          appliance_id: string | null;
+          name: string;
+          category: string;
+          brand: string | null;
+          model: string | null;
+          size: string | null;
+          photo_url: string | null;
+          purchase_url: string | null;
+          last_replaced: string | null;
+          replacement_interval_days: number | null;
+          next_replacement: string | null;
+          notes: string | null;
+          quantity_on_hand: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          appliance_id?: string | null;
+          name: string;
+          category?: string;
+          brand?: string | null;
+          model?: string | null;
+          size?: string | null;
+          photo_url?: string | null;
+          purchase_url?: string | null;
+          last_replaced?: string | null;
+          replacement_interval_days?: number | null;
+          next_replacement?: string | null;
+          notes?: string | null;
+          quantity_on_hand?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          property_id?: string;
+          appliance_id?: string | null;
+          name?: string;
+          category?: string;
+          brand?: string | null;
+          model?: string | null;
+          size?: string | null;
+          photo_url?: string | null;
+          purchase_url?: string | null;
+          last_replaced?: string | null;
+          replacement_interval_days?: number | null;
+          next_replacement?: string | null;
+          notes?: string | null;
+          quantity_on_hand?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "consumables_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "consumables_appliance_id_fkey";
+            columns: ["appliance_id"];
+            isOneToOne: false;
+            referencedRelation: "appliances";
             referencedColumns: ["id"];
           }
         ];
@@ -630,6 +714,10 @@ export type SubscriptionUpdate = Database["public"]["Tables"]["subscriptions"]["
 export type ActivityLog = Database["public"]["Tables"]["activity_log"]["Row"];
 export type ActivityLogInsert = Database["public"]["Tables"]["activity_log"]["Insert"];
 export type ActivityLogUpdate = Database["public"]["Tables"]["activity_log"]["Update"];
+
+export type Consumable = Database["public"]["Tables"]["consumables"]["Row"];
+export type ConsumableInsert = Database["public"]["Tables"]["consumables"]["Insert"];
+export type ConsumableUpdate = Database["public"]["Tables"]["consumables"]["Update"];
 
 // ---- Enum type aliases ----
 

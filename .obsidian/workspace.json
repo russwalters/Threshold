@@ -183,6 +183,18 @@
       "bases:Create new base": false
     }
   },
-  "active": "faabbf21bbd3d46b",
-  "lastOpenFiles": []
+  "active": "5e801257f957fb89",
+  "lastOpenFiles": [
+    "src/components/property/appliance-status-summary.tsx",
+    "src/components/property/appliance-quick-log.tsx",
+    "src/components/property/appliances-grid.tsx",
+    "src/components/onboarding/empty-states.tsx",
+    "src/components/onboarding/quick-add-menu.tsx",
+    "src/components/property/appliance-wizard.tsx",
+    "src/components/onboarding/next-steps-banner.tsx",
+    "src/app/actions/photos.ts",
+    "src/components/property/breaker-panel-summary.tsx",
+    "src/components/onboarding/micro-mission.tsx",
+    "src/components/property/appliance-photos-section.tsx"
+  ]
 }
